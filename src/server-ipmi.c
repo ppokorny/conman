@@ -590,7 +590,7 @@ static int process_ipmi_opt_instance(
         if (n < 1 || n > 15) {
             if ((errbuf != NULL) && (errlen > 0)) {
                 snprintf(errbuf, errlen,
-                    "invalid IPMI SOL payload instance %ld", n);
+                    "invalid IPMI SOL payload instance %ud", n);
             }
             return(-1);
         }
