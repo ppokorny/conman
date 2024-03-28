@@ -784,11 +784,11 @@ obj_t * create_ipmi_obj(server_conf_t *conf, char *name,
             }
             break;
         }
-        if (is_ipmi_obj(ipmi) && !strcmp(ipmi->aux.ipmi.host, host)) {
+        if (is_ipmi_obj(ipmi) && !strcmp(ipmi->aux.ipmi.host, host) && ipmi->aux.ipmi.iconf.solPayloadInstance == iconf->solPayloadInstance) {
             if ((errbuf != NULL) && (errlen > 0)) {
                 snprintf(errbuf, errlen,
-                    "console [%s] specifies duplicate hostname \"%s\"",
-                    name, host);
+                    "console [%s] specifies duplicate hostname \"%s\" and instance %ud",
+                    name, host, iconf->solPayloadInstance);
             }
             break;
         }
@@ -813,7 +813,7 @@ obj_t * create_ipmi_obj(server_conf_t *conf, char *name,
     list_append(conf->objs, ipmi);
 
     DPRINTF((11,
-        "Created IPMI [%s] H:%s U:%s P:%s K:%s L:%d C:%d W:0x%X\n",
+        "Created IPMI [%s] H:%s U:%s P:%s K:%s L:%d C:%d W:0x%X I:%ud\n",
         ipmi->name,
         ipmi->aux.ipmi.host,
         (ipmi->aux.ipmi.iconf.isUsernameSet
@@ -827,7 +827,8 @@ obj_t * create_ipmi_obj(server_conf_t *conf, char *name,
             : "[D]"),
         ipmi->aux.ipmi.iconf.privilegeLevel,
         ipmi->aux.ipmi.iconf.cipherSuite,
-        ipmi->aux.ipmi.iconf.workaroundFlags));
+        ipmi->aux.ipmi.iconf.workaroundFlags,
+        ipmi->aux.ipmi.iconf.solPayloadInstance));
     return(ipmi);
 }
 
