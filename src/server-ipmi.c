@@ -65,6 +65,8 @@ static int process_ipmi_opt_privilege(
     ipmiopt_t *iopts, const char *str, char *errbuf, int errlen);
 static int process_ipmi_opt_cipher(
     ipmiopt_t *iopts, const char *str, char *errbuf, int errlen);
+static int process_ipmi_opt_instance(
+    ipmiopt_t *iopts, const char *str, char *errbuf, int errlen);
 static int process_ipmi_opt_workaround(
     ipmiopt_t *iopts, const char *str, char *errbuf, int errlen);
 static int parse_key(char *dst, const char *src, size_t dstlen);
@@ -312,6 +314,9 @@ static int process_ipmi_opt(
         case 'C':
             rv = process_ipmi_opt_cipher(iopts, p, errbuf, errlen);
             break;
+        case 'I':
+            rv = process_ipmi_opt_instance(iopts, p, errbuf, errlen);
+            break;
         case 'W':
             rv = process_ipmi_opt_workaround(iopts, p, errbuf, errlen);
             break;
@@ -334,7 +339,7 @@ static int is_ipmi_opt_tag(const char *str)
         return(0);
     }
     switch (toupper((int) str[0])) {
-        case 'U': case 'P': case 'K': case 'L': case 'C': case 'W':
+        case 'U': case 'P': case 'K': case 'L': case 'C': case 'W': case 'I':
             return(1);
     }
     return(0);
@@ -546,6 +551,50 @@ static int process_ipmi_opt_cipher(
             return(-1);
         }
         iopts->cipherSuite = n;
+    }
+    return(0);
+}
+
+
+static int process_ipmi_opt_instance(
+    ipmiopt_t *iopts, const char *str, char *errbuf, int errlen)
+{
+/*  Parses string 'str' for the IPMI SOL payload instance
+ *    If the option value is the empty string, the IPMI default will be used.
+ *  Returns 0 and updates the 'iopts' struct on success; o/w, returns -1
+ *    (writing an error message into buffer 'errbuf' of length 'errlen').
+ */
+    assert(iopts != NULL);
+    assert(str != NULL);
+
+    if (str[0] == '\0') {
+        iopts->solPayloadInstance = 0;
+    }
+    else {
+        unsigned int  n;
+        char     *p;
+
+        errno = 0;
+        n = strtoul(str, &p, 0);
+
+        if ((*p != '\0') || (errno == ERANGE)) {
+            if ((errbuf != NULL) && (errlen > 0)) {
+                snprintf(errbuf, errlen,
+                    "invalid IPMI SOL payload instance \"%s\"", str);
+            }
+            return(-1);
+        }
+        /* XXX: Maybe libipmiconsole will export a validator ipmiconsole_sol_payload_instance_is_valid()
+         *    Until then, this is an ugly hard-coded min/max test
+         */
+        if (n < 1 || n > 15) {
+            if ((errbuf != NULL) && (errlen > 0)) {
+                snprintf(errbuf, errlen,
+                    "invalid IPMI SOL payload instance %ld", n);
+            }
+            return(-1);
+        }
+        iopts->solPayloadInstance = n;
     }
     return(0);
 }
@@ -986,6 +1035,16 @@ static int create_ipmi_ctx(obj_t *ipmi)
     if (!ipmi->aux.ipmi.ctx) {
         return(-1);
     }
+
+    /* Now that context is created, set the solPayloadInstance */
+    if (ipmi->aux.ipmi.iconf.solPayloadInstance) {
+        ipmiconsole_ctx_set_config(
+                ipmi->aux.ipmi.ctx,
+                IPMICONSOLE_CTX_CONFIG_OPTION_SOL_PAYLOAD_INSTANCE,
+                &ipmi->aux.ipmi.iconf.solPayloadInstance
+        );
+    };
+
     return(0);
 }
 
