@@ -784,7 +784,8 @@ obj_t * create_ipmi_obj(server_conf_t *conf, char *name,
             }
             break;
         }
-        if (is_ipmi_obj(ipmi) && !strcmp(ipmi->aux.ipmi.host, host) && ipmi->aux.ipmi.iconf.solPayloadInstance == iconf->solPayloadInstance) {
+        if (is_ipmi_obj(ipmi) && !strcmp(ipmi->aux.ipmi.host, host)
+                && ipmi->aux.ipmi.iconf.solPayloadInstance == iconf->solPayloadInstance) {
             if ((errbuf != NULL) && (errlen > 0)) {
                 snprintf(errbuf, errlen,
                     "console [%s] specifies duplicate hostname \"%s\" and instance %ud",
